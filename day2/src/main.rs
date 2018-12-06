@@ -20,6 +20,23 @@ fn distance(l: &str,r: &str) -> i32 {
     }
 }
 
+fn part_one(input: &String) -> i32 {
+    let mut factors = [0usize;4];
+    for line in input.lines() {
+        let mut count = [0u8;26];
+        for c in line.bytes() {
+            count[(c as usize)-('a' as usize)] += 1;
+        }
+        let count_set: HashSet<&u8> = count.iter().filter(|&n| *n > 0).collect();
+        for i in count_set {
+            if (*i as usize) < factors.len() {
+                factors[(*i as usize)] += 1;
+            }
+        }
+    }
+    (factors[2] as i32)*(factors[3] as i32)
+}
+
 fn part_two(input: &String) -> String {
     let mut result = String::new();
     for w1 in input.lines() {
@@ -46,20 +63,8 @@ fn main() -> Result<(), Box<Error>> {
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
 
-    let mut factors = [0usize;4];
-    for line in contents.lines() {
-        let mut count = [0u8;26];
-        for c in line.bytes() {
-            count[(c as usize)-('a' as usize)] += 1;
-        }
-        let count_set: HashSet<&u8> = count.iter().filter(|&n| *n > 0).collect();
-        for i in count_set {
-            if (*i as usize) < factors.len() {
-                factors[(*i as usize)] += 1;
-            }
-        }
-    }
-    println!("Answer for part 1: {}", factors[2]*factors[3]);
+    
+    println!("Answer for part 1: {}", part_one(&contents));
 
     println!("Answer for part 2: {}", part_two(&contents));
 

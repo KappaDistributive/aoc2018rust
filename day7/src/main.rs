@@ -58,19 +58,24 @@ fn get_domain(input: &HashSet<Pair>) -> Vec<char> {
 //     x != y && trcl.contains(&(x,y))
 //}
 
+fn is_available(d: &char, domain: &Vec<char>, ignore_conflict: &Vec<char>, input: &HashSet<Pair>) -> bool {
+    if ignore_conflict.contains(d) {
+        return false;
+    }
+    for c in domain {
+        if input.contains(&(*c,*d)) && !ignore_conflict.contains(c) {
+            return false;
+        }
+    }
+    true
+}
+
 fn order(domain: &Vec<char>, input: &HashSet<Pair>)  -> Vec<char> {
     let mut result: Vec<char> = Vec::new();
     let mut n = domain.len();
     while n > 0 {
         for d in domain {
-            let mut d_available = !result.contains(d);
-            for c in domain {
-                if input.contains(&(*c,*d)) && !result.contains(c) {
-                    d_available = false;
-                    break;
-                }
-            }
-            if d_available {
+            if is_available(d, domain, &result, input) {
                 result.push(*d);
                 n -=1;
                 break;
@@ -98,9 +103,6 @@ fn main() {
     let input = format_input(&input_str);
 
     println!("Answer part 1: {}", solve_part_1(&input));
-    
-    
-
     
 }
 

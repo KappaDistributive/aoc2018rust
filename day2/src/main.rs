@@ -53,7 +53,7 @@ fn part_two(input: &String) -> String {
             }
         }
     }
-    String::from("Panic. This should never be reached!")
+    String::from("Panic! This should never be reached.")
 }
 
 fn main() -> Result<(), Box<Error>> {

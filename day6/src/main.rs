@@ -51,6 +51,17 @@ fn get_map_boundaries(coords: &Vec<Point>) -> (Point,Point) {
     }
 }
 
+fn is_close(p : &Point,threshold: i32, coords: &Vec<Point>) -> bool {
+    let mut dst = 0i32;
+    for c in coords {
+        dst += distance(p,c);
+        if dst >= threshold {
+            return false;
+        }
+    }
+    true
+}
+
 fn distance(p: &Point, q: &Point) -> i32 {
     (p.0 - q.0).abs() + (p.1 - q.1).abs()
 }
@@ -124,6 +135,21 @@ fn solve_part_1(coords: &Vec<Point>) -> i32 {
     answer_part_1
 }
 
+fn solve_part_2(coords: &Vec<Point>) -> i32 {
+    let threshold = 10000;
+    let (min,max) = get_map_boundaries(&coords);
+    let board: Vec<_> =iproduct!(min.0..=max.0+threshold,min.1..=max.1+threshold).map(|(x,y)| (x,y)).collect();
+    let board: Vec<bool> = board.iter().map(|p| is_close(&p, threshold, &coords)).collect();    
+    let mut area = 0i32;
+
+    for b in board {
+        if b {
+            area +=1;
+        }
+    }
+    area
+}
+
 fn main() {
     let filename = "../inputs/day6.txt";
     let mut input_str = String::new();
@@ -134,6 +160,7 @@ fn main() {
 
     println!("Answer part 1: {}",solve_part_1(&coords));
 
+    println!("Answer two part 2 is: {}", solve_part_2(&coords));
 }
 
 #[cfg(test)]

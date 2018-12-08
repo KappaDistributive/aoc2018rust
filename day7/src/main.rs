@@ -2,14 +2,18 @@
 extern crate test;
 extern crate regex;
 
-use std::fs::File;
-use std::io::prelude::*;
 use std::string::String;
 use regex::Regex;
 use std::collections::HashSet;
 
+const INPUT: &str = include_str!("../input.txt");
 
 type Pair = (char,char);
+
+struct Project {
+    id: char,
+    worker: u8,
+}
 
 fn format_input(input_str: &str) -> HashSet<Pair> {
     let re_before: Regex = Regex::new(r"Step \w").unwrap();
@@ -86,21 +90,17 @@ fn order(domain: &Vec<char>, input: &HashSet<Pair>)  -> Vec<char> {
 }
 
 fn solve_part_1(input: &HashSet<Pair>) -> String {
-    let domain = get_domain(&input);
+    let domain = get_domain(input);
     let mut answer = String:: new();
     
-    for a in order(&domain,&input) {
+    for a in order(&domain,input) {
         answer.push(a);
     }
     answer
 }
 
 fn main() {
-    let filename = "../inputs/day7.txt";
-    let mut input_str = String::new();
-    File::open(filename).expect("Error reading file")
-        .read_to_string(&mut input_str).expect("Error reading file");
-    let input = format_input(&input_str);
+    let input = format_input(INPUT);
 
     println!("Answer part 1: {}", solve_part_1(&input));
     

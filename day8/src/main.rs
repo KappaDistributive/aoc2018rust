@@ -12,11 +12,11 @@ struct Node {
 
 impl Node {
     fn from_data(data: &Vec<u32>) -> Self {
+        
         fn build_note(data: &[u32]) -> (Node, usize) {
             let child_count = data[0];
             let meta_count = data[1];
             let mut index = 2usize;
-
             let mut children: Vec<Node> = Vec::new();
             let mut meta: Vec<u32> = Vec::new();
 
@@ -24,36 +24,41 @@ impl Node {
                 let (child, len) = build_note(&data[index..]);
                 children.push(child);
                 index += len;
-            }            
+            }
+            
             for i in index..(index+(meta_count as usize)) {
                 meta.push(data[i]);
             }
+            
             index += meta_count as usize;
-
             (Node{ children, meta}, index)
         }
         build_note(data).0
     }
 
     fn hereditary_sum_meta (&self) -> u32 {
-        self.meta.iter().sum::<u32>() + self.children.iter().map(|c| c.hereditary_sum_meta()).sum::<u32>()
+        self.meta.iter().sum::<u32>()
+            + self.children.iter().map(|c| c.hereditary_sum_meta()).sum::<u32>()
     }
 
     fn value(&self) -> u32 {
+        
         if self.children.is_empty() {
             return self.meta.iter().sum::<u32>()
         }
+        
         else {
             let mut partial_value = 0u32;
+            
             for m in &self.meta {
                 let n: usize = (m-1) as usize;
                 if n < self.children.len() {
                     partial_value += self.children[n].value();
-                }
+                }                
             }
-            partial_value
-        }
             
+            partial_value
+        }            
     }
 }
 

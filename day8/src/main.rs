@@ -11,7 +11,7 @@ struct Node {
 }
 
 impl Node {
-    fn from_data(data: &Vec<u32>) -> Self {
+    fn from_data(data: &[u32]) -> Self {
         
         fn build_note(data: &[u32]) -> (Node, usize) {
             let child_count = data[0];
@@ -44,7 +44,7 @@ impl Node {
     fn value(&self) -> u32 {
         
         if self.children.is_empty() {
-            return self.meta.iter().sum::<u32>()
+            self.meta.iter().sum::<u32>()
         }
         
         else {
@@ -56,7 +56,6 @@ impl Node {
                     partial_value += self.children[n].value();
                 }                
             }
-            
             partial_value
         }            
     }

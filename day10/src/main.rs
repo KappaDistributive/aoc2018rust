@@ -65,8 +65,7 @@ impl ops::AddAssign<Vector> for Point {
 
 const INPUT: &str = include_str!("../input.txt");
 
-
-
+/// parse input_str into a suitable data structure
 fn format_input(input_str: &str) -> Vec<Light> {
     let mut lights: Vec<Light> = Vec::new();
     lazy_static! {
@@ -88,6 +87,7 @@ fn format_input(input_str: &str) -> Vec<Light> {
     lights
 }
 
+/// returns the maximal x and y values in lights
 fn border_lights(lights: &Vec<Light>) -> (i32,i32,i32,i32) {
     let upper = lights.iter().map(|p| p.pos.y).min().unwrap();
     let lower = lights.iter().map(|p| p.pos.y).max().unwrap();
@@ -97,6 +97,7 @@ fn border_lights(lights: &Vec<Light>) -> (i32,i32,i32,i32) {
     (upper, lower, left, right)
 }
 
+/// prints lights as in the problem description
 fn print_lights(lights: &Vec<Light>) {
     let (upper,lower,left,right) = border_lights(lights);
     let height = (lower - upper) as usize + 1;
@@ -115,7 +116,7 @@ fn print_lights(lights: &Vec<Light>) {
     }
 }
 
-fn solve_part_1(input_str: &str) {
+fn solve(input_str: &str) {
     let mut lights: Vec<Light> = format_input(INPUT);
     let limit = 20000;
     let mut i = 1;
@@ -141,11 +142,9 @@ fn solve_part_1(input_str: &str) {
             println!("i = {}", i);
         }
     }
-
 }
 
 
-
 fn main() {
-    solve_part_1(INPUT);
+    solve(INPUT);
 }

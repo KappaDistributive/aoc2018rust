@@ -132,6 +132,10 @@ fn solve_part_1(input_str: &str) {
         else {
             break;
         }
+        // I've obtained the correct bound for benchmark by trial and
+        // error. This part of the code could certainly be improved by
+        // adding some metric to calculate the upper bound instead of
+        // guessing it.
         if benchmark < 200 {
                 print_lights(&lights);
             println!("i = {}", i);

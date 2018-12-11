@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::cmp;
 use std::ops;
 use std::i32;
-
 use regex::Regex;
 
 #[derive(Clone, Copy, Debug)]

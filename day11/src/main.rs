@@ -114,6 +114,7 @@ fn solve_part_2(grid_serial_number: i32) -> ((usize,usize),usize) {
     ((pos.0 + 1, pos.1 + 1), size)
 }
 
+
 fn main() {
     let pos: (usize,usize) = solve_part_1(INPUT);
     println!("Answer part 1: ({},{})", pos.0, pos.1);

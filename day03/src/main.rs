@@ -4,6 +4,7 @@ extern crate regex;
 
 use std::cmp;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use regex::Regex;
 
 const INPUT: &str = include_str!("../input.txt");
@@ -66,7 +67,37 @@ fn solve_part_1(input_str: &str) -> u32 {
     result
 }
 
+fn solve_part_2(input_str: &str) -> u32 {
+    let input = format_input(input_str);
+    let len: usize = input.len();
+    let min_x: i32 = input.iter().map(|claim| claim.pos.0).min().unwrap();
+    let max_x: i32 = input.iter().map(|claim| claim.pos.0 + claim.dim.0 as i32).max().unwrap();
+    let min_y: i32 = input.iter().map(|claim| claim.pos.1).min().unwrap();
+    let max_y: i32 = input.iter().map(|claim| claim.pos.1 + claim.dim.1 as i32).max().unwrap();
+    let mut fabric: Vec<Vec<u32>> = vec![vec![0u32;(max_x-min_x + 1) as usize]; (max_y-min_y + 1) as usize];
+    let mut overlapped: HashSet<u32> = HashSet::new();
+    let mut result: u32 = 0;
+    for claim in input {
+        for y in 0..claim.dim.1 {
+            for x in 0..claim.dim.0 {
+                if fabric[(claim.pos.1 - min_y + y as i32) as usize][(claim.pos.0 - min_x + x as i32) as usize] > 0 {
+                    overlapped.insert(fabric[(claim.pos.1 - min_y + y as i32) as usize][(claim.pos.0 - min_x + x as i32) as usize]);
+                    overlapped.insert(claim.id);
+                }
+                fabric[(claim.pos.1 - min_y + y as i32) as usize ][(claim.pos.0 - min_x + x as i32) as usize] = claim.id;
+            }
+        }
+    }
+    for i in 1..=len {
+        if !overlapped.contains(&(i as u32)) {
+            return i as u32;
+        }
+    }
+    unreachable!();
+}
+
 
 fn main() {
-    println!("{}", solve_part_1(INPUT));
+    println!("Answert part 1: {}", solve_part_1(INPUT));
+    println!("Answert part 2: {}", solve_part_2(INPUT));
 }

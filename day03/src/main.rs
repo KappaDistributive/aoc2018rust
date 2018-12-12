@@ -46,7 +46,24 @@ fn format_input(input_str: &str) -> Vec<Claim> {
 }
 
 fn solve_part_1(input_str: &str) -> u32 {
-    
+    let input = format_input(input_str);
+    let min_x: i32 = input.iter().map(|claim| claim.pos.0).min().unwrap();
+    let max_x: i32 = input.iter().map(|claim| claim.pos.0 + claim.dim.0 as i32).max().unwrap();
+    let min_y: i32 = input.iter().map(|claim| claim.pos.1).min().unwrap();
+    let max_y: i32 = input.iter().map(|claim| claim.pos.1 + claim.dim.1 as i32).max().unwrap();
+    let mut fabric: Vec<Vec<u32>> = vec![vec![0u32;(max_x-min_x + 1) as usize]; (max_y-min_y + 1) as usize];
+    let mut result: u32 = 0;
+    for claim in input {
+        for y in 0..claim.dim.1 {
+            for x in 0..claim.dim.0 {
+                if fabric[(claim.pos.1 - min_y + y as i32) as usize][(claim.pos.0 - min_x + x as i32) as usize] == 1 {
+                    result += 1;
+                }
+                fabric[(claim.pos.1 - min_y + y as i32) as usize ][(claim.pos.0 - min_x + x as i32) as usize] += 1;
+            }
+        }
+    }
+    result
 }
 
 

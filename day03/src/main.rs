@@ -2,6 +2,7 @@
 extern crate lazy_static;
 extern crate regex;
 
+use std::cmp;
 use std::collections::HashMap;
 use regex::Regex;
 
@@ -44,11 +45,11 @@ fn format_input(input_str: &str) -> Vec<Claim> {
     result
 }
 
-fn solve_part_1(input_str: &str) {
-
+fn solve_part_1(input_str: &str) -> u32 {
+    
 }
 
 
 fn main() {
-    println!("{}", format_input(INPUT)[1].dim.1);
+    println!("{}", solve_part_1(INPUT));
 }

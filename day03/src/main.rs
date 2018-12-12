@@ -36,6 +36,7 @@ fn format_input(input_str: &str) -> Vec<Claim> {
     result
 }
 
+
 fn main() {
     println!("{}", format_input(INPUT)[1].dim.1);
 }

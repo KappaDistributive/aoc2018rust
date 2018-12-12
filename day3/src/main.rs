@@ -1,39 +1,41 @@
+#[macro_use]
+extern crate lazy_static;
 extern crate regex;
-use std::fs::File;
-use std::io::prelude::*;
+
 use regex::Regex;
 
+const INPUT: &str = include_str!("../input.txt");
 
-type Point = (i32,i32);
-type Entry = (i32,Point,Point);
-
-
-
-fn process(filename:&str){
-    let result:Vec<Entry> = Vec::new();
-    let mut f = File::open(filename).expect("Error reading file");
-    let mut contents = String::new();
-    f.read_to_string(&mut contents).expect("Error reading file");
-    for line in contents.lines() {
-        retrieve_id(&line);
-    }    
+struct Claim {
+    id: u32,
+    pos: (i32,i32),
+    dim: (u32,u32),
 }
 
-fn retrieve_id(line:&str) -> &str {
-    let id_regex = Regex::new(r"\#([0-9]*)").unwrap();
-    match id_regex.captures(line) {
-        Some(caps) => return caps.get(0).unwrap().as_str(),
-        None => return ""
+impl Claim {
+    fn from_data(id: u32, pos: (i32,i32), dim: (u32,u32)) -> Self {
+        Claim { id, pos, dim }
     }
-
 }
 
-fn formatting(line:&str) {
-    
-    println!("{}", line);
+fn format_input(input_str: &str) -> Vec<Claim> {
+    let mut result: Vec<Claim> = Vec::new();
+    lazy_static!{
+        static ref RE: Regex = Regex::new(r"#(-?[0-9]+)\D+(-?[0-9]+),(-?[0-9]+)\D+(-?[0-9]+)x(-?[0-9]+)").unwrap();
+    }
+    for line in input_str.trim().lines() {
+        let caps = RE.captures(line).unwrap();
+        let id: u32 = caps.get(1).map_or(0u32, |c| c.as_str().parse::<u32>().unwrap());
+        let x: i32 = caps.get(2).map_or(0i32, |c| c.as_str().parse::<i32>().unwrap());
+        let y: i32 = caps.get(3).map_or(0i32, |c| c.as_str().parse::<i32>().unwrap());
+        let w: u32 = caps.get(4).map_or(0u32, |c| c.as_str().parse::<u32>().unwrap());
+        let h: u32 = caps.get(5).map_or(0u32, |c| c.as_str().parse::<u32>().unwrap());
+
+        result.push(Claim::from_data(id, (x,y), (w,h)));
+    }
+    result
 }
 
 fn main() {
-    //process("../inputs/day3.txt");
-    println!("{}",retrieve_id("#1350 @ 574,133: 20x12"));
+    println!("{}", format_input(INPUT)[1].dim.1);
 }

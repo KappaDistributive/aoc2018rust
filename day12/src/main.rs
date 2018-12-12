@@ -4,9 +4,11 @@ extern crate lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
 use std::cmp;
+use std::i32;
 
 const INPUT: &str = include_str!("../input.txt");
 
+#[derive(Clone)]
 struct GameOfPots {
     state: HashMap<i32,bool>,
     range: (i32,i32),
@@ -94,6 +96,7 @@ impl GameOfPots {
         }
         result
     }
+    
 }
 
 fn get_rules(input_str: &str) -> HashMap<(bool,bool,bool,bool,bool),bool> {
@@ -155,8 +158,23 @@ fn solve_part_1(input_str: &str) -> i32 {
     game.score()
 }
 
+fn solve_part_2(input_str: &str) -> u64 {
+    let mut game = GameOfPots::from_data(input_str);
+    // iterate far enough out so that the plant pattern, up to
+    // shifting, becomes constant
+    for _ in 0..100 {
+        game.step();
+    }
+    // inc is the value by which the score increases in each iteration
+    // from here on
+    let inc: u64 = game.state.clone().iter().map(|(_,plant)| if *plant { 1 } else { 0 }).sum();
+    let mut result: u64 = game.score() as u64;
+    result += inc * (50000000000-100);
+    result
+}
+
 
 fn main() {
-    
     println!("Answer part 1: {}", solve_part_1(INPUT));
+    println!("Answer part 2: {}", solve_part_2(INPUT));
 }

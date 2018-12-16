@@ -4,6 +4,8 @@ extern crate regex;
 
 use std::string::String;
 use regex::Regex;
+use std::collections::HashMap;
+use std::collections::HashSet;
 const INPUT: &str = include_str!("../input.txt");
 
 #[derive(Clone)]
@@ -11,6 +13,7 @@ struct RegisterMachine {
     register: Vec<usize>,
 }
 
+#[derive(Clone)]
 struct Sample {
     register_before: Vec<usize>,
     opcode: Vec<usize>,
@@ -91,11 +94,11 @@ impl RegisterMachine {
         self.register[c] = self.register[a] | b;
     }
 
-    fn setr(&mut self, a:usize, c:usize) {
+    fn setr(&mut self, a:usize, b: usize, c:usize) {
         self.register[c] = self.register[a];
     }
 
-    fn seti(&mut self, a: usize, c:usize) {
+    fn seti(&mut self, a: usize, b: usize, c:usize) {
         self.register[c] = a;
     }
 
@@ -335,12 +338,12 @@ fn solve_part_1(input_str: &str) -> u32 {
             matching += 1;
         }
         r = RegisterMachine::from_register(&sample.register_before);
-        r.setr(sample.opcode[1], sample.opcode[3]);
+        r.setr(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
         if r.register == sample.register_after {
             matching += 1;
         }
         r = RegisterMachine::from_register(&sample.register_before);
-        r.seti(sample.opcode[1], sample.opcode[3]);
+        r.seti(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
         if r.register == sample.register_after {
             matching += 1;
         }
@@ -385,14 +388,12 @@ fn solve_part_1(input_str: &str) -> u32 {
                        }).sum()
 }
 
-fn solve_part_2(input_str: &str) -> usize {
 
-    0
-}
+
+
 
 fn main() {
     println!("Answer part 1: {}", solve_part_1(INPUT));
-
 }
 
 #[cfg(test)]
@@ -403,12 +404,6 @@ mod tests {
     fn test_registermachine_from_str() {
         let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
         assert_eq!(m.register, vec![0,1,2,3]);
-        
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        assert_eq!(m.register, vec![0,-1,-2,-3]);
-
-        m = RegisterMachine::from_str("[0, -1, 07, -03]");
-        assert_eq!(m.register, vec![0,-1,7,-3]);
     }
 
     #[test]
@@ -422,10 +417,6 @@ mod tests {
 
         m.addr(0,1,3);
         assert_eq!(m.register, vec![6,1,2,7]);
-
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        m.addr(1,2,0);
-        assert_eq!(m.register, vec![-3,-1,-2,-3]);
     }
 
     #[test]
@@ -434,11 +425,11 @@ mod tests {
         m.addi(1,1,0);
         assert_eq!(m.register, vec![2,1,2,3]);
 
-        m.addi(3,-7,3);
-        assert_eq!(m.register, vec![2,1,2,-4]);
+        m.addi(3,7,3);
+        assert_eq!(m.register, vec![2,1,2,10]);
 
         m.addi(0,0,0);
-        assert_eq!(m.register, vec![2,1,2,-4]);
+        assert_eq!(m.register, vec![2,1,2,10]);
 
         m.addi(1,5,3);
         assert_eq!(m.register, vec![2,1,2,6]);
@@ -455,10 +446,6 @@ mod tests {
 
         m.mulr(0,1,3);
         assert_eq!(m.register, vec![2,4,2,8]);
-
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        m.mulr(1,2,0);
-        assert_eq!(m.register, vec![2,-1,-2,-3]);
     }
 
     #[test]
@@ -467,11 +454,11 @@ mod tests {
         m.muli(1,3,0);
         assert_eq!(m.register, vec![3,1,2,3]);
 
-        m.muli(3,-7,3);
-        assert_eq!(m.register, vec![3,1,2,-21]);
+        m.muli(3,7,3);
+        assert_eq!(m.register, vec![3,1,2,21]);
 
         m.muli(0,0,0);
-        assert_eq!(m.register, vec![0,1,2,-21]);
+        assert_eq!(m.register, vec![0,1,2,21]);
 
         m.muli(2,5,3);
         assert_eq!(m.register, vec![0,1,2,10]);
@@ -485,10 +472,6 @@ mod tests {
 
         m.banr(3,2,0);
         assert_eq!(m.register, vec![2,1,2,3]);
-
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        m.banr(3,2,0);
-        assert_eq!(m.register, vec![-2 & -3,-1,-2,-3]);
     }
 
     #[test]
@@ -499,10 +482,6 @@ mod tests {
 
         m.bani(3,2,0);
         assert_eq!(m.register, vec![2,1,2,3]);
-
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        m.bani(3,2,0);
-        assert_eq!(m.register, vec![2 & -3,-1,-2,-3]);
     }
 
     #[test]
@@ -513,10 +492,6 @@ mod tests {
 
         m.borr(1,1,0);
         assert_eq!(m.register, vec![1,1,2,3]);
-
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        m.borr(3,2,0);
-        assert_eq!(m.register, vec![-2 | -3,-1,-2,-3]);
     }
 
     #[test]
@@ -527,35 +502,31 @@ mod tests {
 
         m.bori(2,4,0);
         assert_eq!(m.register, vec![6,1,2,3]);
-
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        m.bori(3,2,0);
-        assert_eq!(m.register, vec![2 | -3,-1,-2,-3]);
     }
 
     #[test]
     fn test_setr() {
         let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.setr(1,0);
+        m.setr(1,0,0);
         assert_eq!(m.register, vec![1,1,2,3]);
 
-        m.setr(3,1);
+        m.setr(3,0,1);
         assert_eq!(m.register, vec![1,3,2,3]);
 
-        m.setr(0,2);
+        m.setr(0,0,2);
         assert_eq!(m.register, vec![1,3,1,3]);
     }
 
     #[test]
     fn test_seti() {
         let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.seti(1,0);
+        m.seti(1,0,0);
         assert_eq!(m.register, vec![1,1,2,3]);
 
-        m.seti(3,1);
+        m.seti(3,0,1);
         assert_eq!(m.register, vec![1,3,2,3]);
 
-        m.seti(0,2);
+        m.seti(0,0,2);
         assert_eq!(m.register, vec![1,3,0,3]);
     }
 
@@ -568,18 +539,8 @@ mod tests {
         m.gtir(1,1,0);
         assert_eq!(m.register, vec![0,1,2,3]);
 
-        m.gtir(-2,1,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        m.gtir(2,1,0);
-        assert_eq!(m.register, vec![1,-1,-2,-3]);
-
-        m.gtir(-2,1,0);
-        assert_eq!(m.register, vec![0,-1,-2,-3]);
-
         m.gtir(0,1,0);
-        assert_eq!(m.register, vec![1,-1,-2,-3]);
+        assert_eq!(m.register, vec![0,1,2,3]);
     }
 
     #[test]
@@ -591,18 +552,8 @@ mod tests {
         m.gtri(1,1,0);
         assert_eq!(m.register, vec![0,1,2,3]);
 
-        m.gtri(1,-2,0);
-        assert_eq!(m.register, vec![1,1,2,3]);
-
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        m.gtri(1,2,0);
-        assert_eq!(m.register, vec![0,-1,-2,-3]);
-
-        m.gtri(1,-2,0);
-        assert_eq!(m.register, vec![1,-1,-2,-3]);
-
-        m.gtri(1,0,0);
-        assert_eq!(m.register, vec![0,-1,-2,-3]);
+        m.gtri(0,2,0);
+        assert_eq!(m.register, vec![0,1,2,3]);
     }
 
     #[test]
@@ -617,15 +568,6 @@ mod tests {
         m.gtrr(3,1,0);
         assert_eq!(m.register, vec![1,1,2,3]);
 
-        m = RegisterMachine::from_str("[0, -1, -2, -3]");
-        m.gtrr(1,2,0);
-        assert_eq!(m.register, vec![1,-1,-2,-3]);
-
-        m.gtrr(1,3,0);
-        assert_eq!(m.register, vec![1,-1,-2,-3]);
-
-        m.gtrr(0,1,0);
-        assert_eq!(m.register, vec![1,-1,-2,-3]);
     }
 
     #[test]
@@ -671,9 +613,6 @@ mod tests {
     fn test_opcode_from_str () {
         let mut opcode: Vec<usize> = opcode_from_str("1 2 3 4");
         assert_eq!(opcode, vec![1,2,3,4]);
-
-        opcode = opcode_from_str("-1 -2 -3 -4");
-        assert_eq!(opcode, vec![-1,-2,-3,-4]);
     }
 
     #[test]
@@ -681,8 +620,6 @@ mod tests {
         let mut register: Vec<usize> = register_from_str("[1, 2, 3, 4]").unwrap();
         assert_eq!(register, vec![1,2,3,4]);
 
-        register = register_from_str("[-1, -2, -3, -4]").unwrap();
-        assert_eq!(register, vec![-1,-2,-3,-4]);
     }
 
     #[test]

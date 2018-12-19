@@ -437,11 +437,19 @@ fn solve_part_1(input_str: &str) -> usize {
     while !finished {
         finished = !rm.step();
     }
-    rm.register[0]
+    rm.register[1]
 }
 
 fn main() {
     println!("Answer part 1: {}", solve_part_1(INPUT));
+
+    
+    // reserve engineering of the instruction set for part 2 yields
+    // that it attemps to return the sum of all factors of 10551355
+    // (the entry of register[5] after 18 steps). So the answer to
+    // part 2 is:
+    
+    println!("Answer part 1: {}", 12690000);
 }
 
 #[cfg(test)]

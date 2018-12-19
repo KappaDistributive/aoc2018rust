@@ -1,0 +1,9 @@
+[package]
+name = "day19"
+version = "0.1.0"
+authors = ["Stefan Mesken <KappaDistributive@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
+regex = "*"
+lazy_static = "*"

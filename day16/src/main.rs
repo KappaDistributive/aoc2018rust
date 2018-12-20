@@ -8,632 +8,213 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 const INPUT: &str = include_str!("../input.txt");
 
-#[derive(Clone)]
-struct RegisterMachine {
-    register: Vec<usize>,
-}
-
-#[derive(Clone)]
+#[derive(Debug)]
 struct Sample {
     register_before: Vec<usize>,
-    opcode: Vec<usize>,
+    instruction: Vec<usize>,
     register_after: Vec<usize>,
 }
 
-impl RegisterMachine {
-
-    fn new(register_size: usize) -> Self {
-        let register: Vec<usize> = vec![0usize; register_size];
-
-        RegisterMachine { register }
-    }
-
-    fn from_str(register: &str) -> Self {
-        match register_from_str(register) {
-            Some(register) => {
-                RegisterMachine { register }
-            }
-            None => {
-                let register: Vec<usize> = Vec::new();
-                RegisterMachine { register }
-            }
-        }
-    }
-
-    fn from_register(input: &Vec<usize>) -> Self {
-        let register: Vec<usize> = input.clone();
-        RegisterMachine { register }
-    }
-
-    fn print_register(&self) {
-        let mut output: String = String::new();
-        
-        for r in self.register.clone() {
-            if output.len() == 0 {
-                output.push('[');
-            }
-            else {
-                output.push(',');
-                output.push(' ');
-            }
-            output.push_str(&r.to_string());
-        }
-            output.push(']');
-        println!("{}", output);
-    }
-
-    fn addr(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] = self.register[a] + self.register[b];
-    }
-
-    fn addi(&mut self, a: usize, b: usize, c:usize) {
-        self.register[c] = self.register[a] + b;
-    }
-
-    fn mulr(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] = self.register[a] * self.register[b];
-    }
-
-    fn muli(&mut self, a: usize, b: usize, c:usize) {
-        self.register[c] = self.register[a] * b;
-    }
-
-    fn banr(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] = self.register[a] & self.register[b];
-    }
-
-    fn bani(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] = self.register[a] & b;
-    }
-
-    fn borr(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] = self.register[a] | self.register[b];
-    }
-
-    fn bori(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] = self.register[a] | b;
-    }
-
-    fn setr(&mut self, a:usize, b: usize, c:usize) {
-        self.register[c] = self.register[a];
-    }
-
-    fn seti(&mut self, a: usize, b: usize, c:usize) {
-        self.register[c] = a;
-    }
-
-    fn gtir(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] =
-            if a > self.register[b] {
-                1
-            }
-        else {
-            0
-        };
-    }
-
-    fn gtri(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] =
-            if self.register[a] > b {
-                1
-            }
-        else {
-            0
-        };
-    }
-
-    fn gtrr(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] =
-            if self.register[a] > self.register[b] {
-                1
-            }
-        else {
-            0
-        };
-    }
-
-    fn eqir(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] =
-            if a == self.register[b] {
-                1
-            }
-        else {
-            0
-        };
-    }
-
-    fn eqri(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] =
-            if self.register[a] == b {
-                1
-            }
-        else {
-            0
-        };
-    }
-
-    fn eqrr(&mut self, a: usize, b: usize, c: usize) {
-        self.register[c] =
-            if self.register[a] == self.register[b] {
-                1
-            }
-        else {
-            0
-        };
+impl PartialEq for Sample {
+    fn eq(&self, other: &Sample) -> bool {
+        self.register_before == other.register_before
+            && self.instruction == other.instruction
+            && self.register_after == other.register_after
     }
 }
 
-impl Sample {
-    fn from_str(sample: &str) -> Option<Self> {
-        lazy_static!{
-            static ref RE_SAMPLE: Regex =
-                Regex::new(r"Before:\s(?P<register_before>\[[\s0-9,-]+\])\n(?P<opcode>[-\s0-9]+)\nAfter:\s{2}(?P<register_after>\[[\s0-9,-]+\])\n(?P<new_line>)").unwrap();
-        }
-        let mut register_before: Vec<usize> = Vec::new();
-        let mut opcode: Vec<usize> = Vec::new();
-        let mut register_after: Vec<usize> = Vec::new();
-        
-        match RE_SAMPLE.captures(sample) {
-            Some(cap) => {
-                match register_from_str(&cap.name("register_before").map_or("", |m| m.as_str())) {
-                    Some(r) => {
-                        register_before = r;
-                    }
-                    None => {
-                        
-                    }
-                }
-                opcode = opcode_from_str(&cap.name("opcode").map_or("", |m| m.as_str()));
-                
-                match register_from_str(&cap.name("register_after").map_or("", |m| m.as_str())) {
-                    Some(r) => {
-                        register_after = r;
-                    }
-                    None => {
-                        
-                    }
-                }
-                Some(Sample { register_before, opcode, register_after })
-            }
-            
-            None => {
-                None
-            }
-        }
+fn addr(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
     }
-
-    fn print(&self) {
-        print!("Before: ");
-        let mut output_before: String = String::new();
-        for r in self.register_before.clone() {
-            if output_before.len() == 0 {
-                output_before.push('[');
-            }
-            else {
-                output_before.push(',');
-                output_before.push(' ');
-            }
-            output_before.push_str(&r.to_string());
-        }
-        output_before.push(']');
-        println!("{}", output_before);
-
-        let mut output_opcode: String = String::new();
-        print!("Opcode: ");
-        let mut output_opcode: String = String::new();
-        for r in self.opcode.clone() {
-            output_opcode.push(' ');
-            output_opcode.push_str(&r.to_string());
-        }
-        println!("{}", output_opcode);
-
-        print!("After:  ");
-        let mut output_after: String = String::new();
-        for r in self.register_after.clone() {
-            if output_after.len() == 0 {
-                output_after.push('[');
-            }
-            else {
-                output_after.push(',');
-                output_after.push(' ');
-            }
-            output_after.push_str(&r.to_string());
-        }
-        output_after.push(']');
-        println!("{}", output_after);
-    }
+    register[instruction[3]] = register[instruction[1]] + register[instruction[2]];
 }
 
-fn opcode_from_str(opcode :&str) -> Vec<usize> {
-    opcode.split(" ").map(|m| m.parse::<usize>().unwrap()).collect()
+fn addi(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = register[instruction[1]] + instruction[2];
 }
 
-fn register_from_str(register: &str) -> Option<Vec<usize>> {
+fn mulr(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = register[instruction[1]] * register[instruction[2]];
+}
+
+fn muli(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = register[instruction[1]] * instruction[2];
+}
+
+fn banr(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = register[instruction[1]] & register[instruction[2]];
+}
+
+fn bani(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = register[instruction[1]] & instruction[2];
+}
+
+fn borr(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = register[instruction[1]] | register[instruction[2]];
+}
+
+fn bori(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = register[instruction[1]]  |instruction[2];
+}
+
+fn setr(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = register[instruction[1]];
+}
+
+fn seti(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = instruction[1];
+}
+
+fn gtir(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = if instruction[1] > register[instruction[2]] { 1 } else { 0 };
+}
+
+fn gtri(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = if register[instruction[1]] > instruction[2] { 1 } else { 0 };
+}
+
+fn gtrr(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = if register[instruction[1]] > register[instruction[2]] { 1 } else { 0 };
+}
+
+fn eqir(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = if instruction[1] == register[instruction[2]] { 1 } else { 0 };
+}
+
+fn eqri(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = if register[instruction[1]] == instruction[2] { 1 } else { 0 };
+}
+
+fn eqrr(instruction: &Vec<usize>, register: &mut Vec<usize>) {
+    if instruction.len() != 4 || register.len() != 4 {
+        panic!("Wrong number of arguments");
+    }
+    register[instruction[3]] = if register[instruction[1]] == register[instruction[2]] { 1 } else { 0 };
+}
+
+fn get_named_functions() -> Vec<(String, fn(&Vec<usize>, &mut Vec<usize>))> {
+    let mut named_functions: Vec<(String, fn(&Vec<usize>, &mut Vec<usize>))> = Vec::new();
+
+    named_functions.push(("addr".to_string(), addr));
+    named_functions.push(("addi".to_string(), addi));
+    named_functions.push(("mulr".to_string(), mulr));
+    named_functions.push(("muli".to_string(), muli));
+    named_functions.push(("banr".to_string(), banr));
+    named_functions.push(("bani".to_string(), bani));
+    named_functions.push(("borr".to_string(), borr));
+    named_functions.push(("bori".to_string(), bori));
+    named_functions.push(("setr".to_string(), setr));
+    named_functions.push(("seti".to_string(), seti));
+    named_functions.push(("gtir".to_string(), gtir));
+    named_functions.push(("gtri".to_string(), gtri));
+    named_functions.push(("gtrr".to_string(), gtrr));
+    named_functions.push(("eqir".to_string(), eqir));
+    named_functions.push(("eqri".to_string(), eqri));
+    named_functions.push(("eqrr".to_string(), eqrr));
+    
+    named_functions
+}
+
+fn samples_from_str(input: &str) -> Vec<Sample> {
     lazy_static!{
-        static ref RE_REGISTER: Regex =
-            Regex::new(r"\[(?P<zero>-?[0-9]+), (?P<one>-?[0-9]+), (?P<two>-?[0-9]+), (?P<three>-?[0-9]+)\]").unwrap();
+        static ref RE_SAMPLE: Regex = Regex::new(r"Before: (?P<register_before>\[[-,\s0-9]+\])\n(?P<instruction>[\s0-9]+)\nAfter:  (?P<register_after>\[[-,\s0-9]+\])\n").unwrap();
     }
-        
-    match RE_REGISTER.captures(register) {
-        Some(cap) => {
-            let zero = cap.name("zero").map_or(0usize, |m| m.as_str().parse::<usize>().unwrap());
-            let one = cap.name("one").map_or(0usize, |m| m.as_str().parse::<usize>().unwrap());
-            let two = cap.name("two").map_or(0usize, |m| m.as_str().parse::<usize>().unwrap());
-            let three = cap.name("three").map_or(0usize, |m| m.as_str().parse::<usize>().unwrap());        
-            let result: Vec<usize> = [zero, one, two, three].to_vec();
-            Some(result)
-        }
-        None => {
-            None
-        }
-
-    }
-}
-
-fn samples_from_str(input_str: &str) -> Vec<Sample> {
     let mut samples: Vec<Sample> = Vec::new();
-    let mut buffer: String = String::new();
-    for (i, line) in input_str.trim().lines().enumerate() {
-        buffer.push_str(line);
-        buffer.push('\n');
-        if i % 4 == 3 {
-            match Sample::from_str(&buffer) {
-                Some(sample) => {
-                    samples.push(sample);
-                    buffer = String::new();
-                }
-                None => {
-                    buffer = String::new();
-                    continue;
-                }
-            }
-        }
+    
+    for cap in RE_SAMPLE.captures_iter(input) {
+        let register_before: Vec<usize> = register_from_str(&cap["register_before"]);
+        let instruction: Vec<usize> = cap["instruction"].split(" ").map(|m| m.parse::<usize>().unwrap()).collect();
+        let register_after: Vec<usize> = register_from_str(&cap["register_after"]);
+        samples.push( Sample { register_before, instruction, register_after });
     }
     samples
 }
 
-fn solve_part_1(input_str: &str) -> u32 {
-    let samples = samples_from_str(input_str);
-    let mut matches: Vec<u32> = Vec::new();
-    for sample in samples {
-        let mut r: RegisterMachine = RegisterMachine::from_register(&sample.register_before);
-        let mut matching: u32 = 0;
-        r.addr(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.addi(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.mulr(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.muli(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.banr(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.bani(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.borr(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.bori(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.setr(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.seti(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.gtir(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.gtri(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.gtrr(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.eqir(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.eqri(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        r = RegisterMachine::from_register(&sample.register_before);
-        r.eqrr(sample.opcode[1], sample.opcode[2], sample.opcode[3]);
-        if r.register == sample.register_after {
-            matching += 1;
-        }
-        matches.push(matching);
+// expects a string of the form "[0, 1, 2, 3, 4]"
+fn register_from_str (input: &str) -> Vec<usize> {
+    lazy_static!{
+        static ref RE_REGISTER: Regex = Regex::new(r"(?P<number>[0-9]+)").unwrap();
     }
-    matches.iter().map(|m|
-                       if *m > 2 {
-                           1
-                       }
-                       else {
-                           0
-                       }).sum()
+    let mut result: Vec<usize> = Vec::new();
+    for cap in RE_REGISTER.captures_iter(input) {
+        result.push(cap["number"].parse::<usize>().unwrap());
+    }
+    result
 }
 
-
-
-
+fn solve_part_1(input: &str) -> usize {
+    0
+}
 
 fn main() {
-    println!("Answer part 1: {}", solve_part_1(INPUT));
+    println!("Answer part 1: {}",solve_part_1(INPUT));
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_registermachine_from_str() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        assert_eq!(m.register, vec![0,1,2,3]);
-    }
-
-    #[test]
-    fn test_addr() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.addr(1,2,0);
-        assert_eq!(m.register, vec![3,1,2,3]);
-        
-        m.addr(0,0,0);
-        assert_eq!(m.register, vec![6,1,2,3]);
-
-        m.addr(0,1,3);
-        assert_eq!(m.register, vec![6,1,2,7]);
-    }
-
-    #[test]
-    fn test_addi() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.addi(1,1,0);
-        assert_eq!(m.register, vec![2,1,2,3]);
-
-        m.addi(3,7,3);
-        assert_eq!(m.register, vec![2,1,2,10]);
-
-        m.addi(0,0,0);
-        assert_eq!(m.register, vec![2,1,2,10]);
-
-        m.addi(1,5,3);
-        assert_eq!(m.register, vec![2,1,2,6]);
-    }
-
-        #[test]
-    fn test_mulr() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.mulr(1,2,0);
-        assert_eq!(m.register, vec![2,1,2,3]);
-        
-        m.mulr(2,2,1);
-        assert_eq!(m.register, vec![2,4,2,3]);
-
-        m.mulr(0,1,3);
-        assert_eq!(m.register, vec![2,4,2,8]);
-    }
-
-    #[test]
-    fn test_muli() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.muli(1,3,0);
-        assert_eq!(m.register, vec![3,1,2,3]);
-
-        m.muli(3,7,3);
-        assert_eq!(m.register, vec![3,1,2,21]);
-
-        m.muli(0,0,0);
-        assert_eq!(m.register, vec![0,1,2,21]);
-
-        m.muli(2,5,3);
-        assert_eq!(m.register, vec![0,1,2,10]);
-    }
-
-    #[test]
-    fn test_banr() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.banr(1,2,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-
-        m.banr(3,2,0);
-        assert_eq!(m.register, vec![2,1,2,3]);
-    }
-
-    #[test]
-    fn test_bani() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.bani(1,2,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-
-        m.bani(3,2,0);
-        assert_eq!(m.register, vec![2,1,2,3]);
-    }
-
-    #[test]
-    fn test_borr() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.borr(1,2,0);
-        assert_eq!(m.register, vec![3,1,2,3]);
-
-        m.borr(1,1,0);
-        assert_eq!(m.register, vec![1,1,2,3]);
-    }
-
-    #[test]
-    fn test_bori() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.bori(1,2,0);
-        assert_eq!(m.register, vec![3,1,2,3]);
-
-        m.bori(2,4,0);
-        assert_eq!(m.register, vec![6,1,2,3]);
-    }
-
-    #[test]
-    fn test_setr() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.setr(1,0,0);
-        assert_eq!(m.register, vec![1,1,2,3]);
-
-        m.setr(3,0,1);
-        assert_eq!(m.register, vec![1,3,2,3]);
-
-        m.setr(0,0,2);
-        assert_eq!(m.register, vec![1,3,1,3]);
-    }
-
-    #[test]
-    fn test_seti() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.seti(1,0,0);
-        assert_eq!(m.register, vec![1,1,2,3]);
-
-        m.seti(3,0,1);
-        assert_eq!(m.register, vec![1,3,2,3]);
-
-        m.seti(0,0,2);
-        assert_eq!(m.register, vec![1,3,0,3]);
-    }
-
-    #[test]
-    fn test_gtir() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.gtir(2,1,0);
-        assert_eq!(m.register, vec![1,1,2,3]);
-
-        m.gtir(1,1,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-
-        m.gtir(0,1,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-    }
-
-    #[test]
-    fn test_gtri() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.gtri(1,2,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-
-        m.gtri(1,1,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-
-        m.gtri(0,2,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-    }
-
-    #[test]
-    fn test_gtrr() {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 3]");
-        m.gtrr(1,2,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-
-        m.gtrr(1,1,0);
-        assert_eq!(m.register, vec![0,1,2,3]);
-
-        m.gtrr(3,1,0);
-        assert_eq!(m.register, vec![1,1,2,3]);
-
-    }
-
-    #[test]
-    fn test_eqir () {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 2]");
-        m.eqir(1,2,0);
-        assert_eq!(m.register, vec![0,1,2,2]);
-
-        m.eqir(1,1,0);
-        assert_eq!(m.register, vec![1,1,2,2]);
-
-        m.eqir(2,2,0);
-        assert_eq!(m.register, vec![1,1,2,2]);
-    }
-
-    #[test]
-    fn test_eqri () {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 2]");
-        m.eqri(1,2,0);
-        assert_eq!(m.register, vec![0,1,2,2]);
-
-        m.eqri(1,1,0);
-        assert_eq!(m.register, vec![1,1,2,2]);
-
-        m.eqri(2,2,0);
-        assert_eq!(m.register, vec![1,1,2,2]);
-    }
-
-    #[test]
-    fn test_eqrr () {
-        let mut m: RegisterMachine = RegisterMachine::from_str("[0, 1, 2, 2]");
-        m.eqrr(1,2,0);
-        assert_eq!(m.register, vec![0,1,2,2]);
-
-        m.eqrr(1,1,0);
-        assert_eq!(m.register, vec![1,1,2,2]);
-
-        m.eqrr(2,3,0);
-        assert_eq!(m.register, vec![1,1,2,2]);
-    }
-
-    #[test]
-    fn test_opcode_from_str () {
-        let mut opcode: Vec<usize> = opcode_from_str("1 2 3 4");
-        assert_eq!(opcode, vec![1,2,3,4]);
-    }
-
+    
     #[test]
     fn test_register_from_str () {
-        let mut register: Vec<usize> = register_from_str("[1, 2, 3, 4]").unwrap();
-        assert_eq!(register, vec![1,2,3,4]);
+        let mut register = register_from_str(&"[0, 1, 2, 3]");
+        assert_eq!(register, vec![0,1,2,3]);
 
+        register = register_from_str(&"[5,3,2,7,0,1]");
+        assert_eq!(register, vec![5,3,2,7,0,1]);
     }
 
     #[test]
-    fn test_sample_from_str () {
-        match Sample::from_str("Before: [2, 1, 1, 0]\n5 1 0 1\nAfter:  [2, 0, 1, 0]\n") {
-            Some(sample) => {
-                assert_eq!(sample.register_before, vec![2,1,1,0]);
-                assert_eq!(sample.opcode, vec![5,1,0,1]);
-                assert_eq!(sample.register_after, vec![2,0,1,0]);
-            }
-            None => {
-                assert!(false);
-            }
-        }
+    fn test_samples_from_str () {
+        let mut test_samples: Vec<Sample> = Vec::new();
+        let register_before: Vec<usize> = vec![2,1,1,0];
+        let instruction: Vec<usize> = vec![5,1,0,1];
+        let register_after: Vec<usize> = vec![2,0,1,0];
+        test_samples.push( Sample { register_before, instruction, register_after  });
+        
+        let samples: Vec<Sample> = samples_from_str("Before: [2, 1, 1, 0]\n5 1 0 1\nAfter:  [2, 0, 1, 0]\n");
+        assert_eq!(samples, test_samples);
     }
-    
 }

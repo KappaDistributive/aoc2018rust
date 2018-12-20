@@ -1,7 +1,10 @@
 #[macro_use]
 extern crate lazy_static;
 extern crate regex;
+extern crate image;
 
+use image::{ImageBuffer, Rgb};
+use std::path::Path;
 use regex::Regex;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -51,61 +54,8 @@ impl Scan {
         count
     }
 
-    fn flow(&mut self) {
-        let mut updates: HashSet<(Point,char)> = HashSet::new();
-        let mut updated: bool = false;
-        for (x,y) in self.active.clone().iter() {
-            if *y <= self.max_y {
-                match self.scan.get(&(*x,*y+1)) {
-                    Some(c) => {
-                        if *c == '#' || *c == '~' {
-                            self.active.remove(&(*x,*y));
-                            let mut t_min: usize = *x;
-                            let mut t_max: usize = *x;
-                            while self.scan.get(&(t_min,*y+1)).is_some()
-                                && (!self.scan.get(&(t_min-1,*y)).is_some() || *self.scan.get(&(t_min-1,*y)).unwrap() == '|') {
-                                    t_min -= 1;
-                                }
-                            while self.scan.get(&(t_max,*y+1)).is_some()
-                                && (!self.scan.get(&(t_max+1,*y)).is_some() || *self.scan.get(&(t_max+1,*y)).unwrap() == '|') {
-                                    t_max += 1;
-                                }
-
-                            for z in t_min..=t_max {
-                                if self.scan.get(&(t_min-1,*y)).is_some()
-                                    && *self.scan.get(&(t_min-1,*y)).unwrap() == '#'
-                                    && self.scan.get(&(t_max+1,*y)).is_some()
-                                    && *self.scan.get(&(t_max+1,*y)).unwrap() == '#' {
-                                        updates.insert(((z,*y),'~'));
-                                        if *y > 0 {
-                                            self.active.insert((*x,*y-1));
-                                        }
-                                    }
-                                else {
-                                    updates.insert(((z,*y),'|'));
-                                    self.active.insert((t_min-1,*y));
-                                    self.active.insert((t_max+1,*y));
-                                }
-                            }
-                        }
-                    }
-                    None => {
-                        updates.insert(((*x,*y+1),'|'));
-                        self.active.remove(&(*x,*y));
-                        self.active.insert((*x,*y+1));
-                    }
-                }
-            }
-        }
-        for ((x,y),c) in updates {
-            if y <= self.max_y {
-                self.scan.insert((x,y),c);
-                updated = true;
-            }
-        }
-        if updated {
-            self.flow();
-        }
+    fn step(&mut self) {
+        
     }
 
     fn print(&self) {
@@ -129,6 +79,51 @@ impl Scan {
             }
             println!();
         }
+    }
+
+    fn print_png(&self, path: &str) {
+        let mut min_x: usize = usize::MAX;
+        let mut max_x: usize = 0;
+        for ((x,_),_) in self.scan.clone() {
+            min_x = cmp::min(min_x, x);
+            max_x = cmp::max(max_x, x);
+        }
+        let width: u32 = (max_x - min_x + 1) as u32;
+        let height: u32 = (self.max_y + 1) as u32;
+        
+        let mut image = ImageBuffer::<Rgb<u8>, Vec<u8>>::new(width, height);
+        
+        let flowing_water: [u8;3] = [0,200,200];
+        let still_water: [u8;3] = [0,50,200];
+        let clay: [u8;3] = [200,200,200];
+        let background: [u8;3] = [50,50,50];
+        let source: [u8;3] = [200,0,0];
+        
+        for y in 0..=self.max_y {
+            for x in min_x..=max_x {
+                match self.scan.get(&(x,y)) {
+                    Some(c) => {
+                        if *c == '#' {
+                            image.get_pixel_mut((x - min_x) as u32,y as u32).data = clay;
+                        }
+                        if *c == '|' {
+                            image.get_pixel_mut((x - min_x) as u32,y as u32).data = flowing_water;
+                        }
+                        if *c == '~' {
+                            image.get_pixel_mut((x - min_x) as u32,y as u32).data = still_water;
+                        }
+                        if *c == '+' {
+                            image.get_pixel_mut((x - min_x) as u32,y as u32).data = source;
+                        }
+                    }
+                    None => {
+                        image.get_pixel_mut((x - min_x) as u32,y as u32).data = background;
+                    }
+                }
+            }
+            
+        }
+        image.save(Path::new(path));
     }
 }
 
@@ -163,10 +158,12 @@ fn format_input(input: &str) -> Scan {
 
 fn main() {
     let mut scan: Scan = format_input(INPUT);
-    scan.print();
-    scan.flow();
-    println!();
-    scan.print();
-    
-    println!("{}", scan.water_count());
+    for i in 0..17 {
+        scan.step();
+    }
+    for i in 0..5 {
+        scan.step();
+        scan.print_png(&format!("image{}.png",i));
+    }
+    println!("Answer part 1: {}",scan.water_count());
 }

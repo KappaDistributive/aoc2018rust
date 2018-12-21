@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 const INPUT: usize = 939601;
+const INPUT_LENGTH: usize = 6;
 
 struct Scoreboard {
     alice: usize,
@@ -9,6 +8,7 @@ struct Scoreboard {
 }
 
 impl Scoreboard {
+    
     fn new() -> Self {
         Scoreboard { alice: 0, bob: 1, scores: vec![3,7] }
     }
@@ -37,9 +37,12 @@ impl Scoreboard {
             self.scores.push(score / 10);
             self.scores.push(score % 10);
         }
-        self.alice = (1 + self.alice + (self.scores[self.alice] as usize)) % self.scores.len();
-        self.bob = (1 + self.bob + (self.scores[self.bob] as usize)) % self.scores.len();
+        self.alice = (1 + self.alice + (self.scores[self.alice] as usize))
+            % self.scores.len();
+        self.bob = (1 + self.bob + (self.scores[self.bob] as usize))
+            % self.scores.len();
     }
+    
 }
 
 fn solve_part_1(input: usize) -> usize {
@@ -55,7 +58,7 @@ fn solve_part_1(input: usize) -> usize {
     result
 }
 
-fn solve_part_2(input: usize) -> usize{    
+fn solve_part_2(input: usize, input_length: usize) -> usize{    
     let mut board: Scoreboard = Scoreboard::new();
     let mut index: usize = 0;
     let mut test: usize = 0;
@@ -65,8 +68,7 @@ fn solve_part_2(input: usize) -> usize{
     while test != input {
         board.step();        
         test = 0;
-        // replace 6 with number of digits of input
-        for i in 0..6 {
+        for i in 0..input_length {
             test *= 10;
             test += board.scores[index+i] as usize;
         }
@@ -77,5 +79,5 @@ fn solve_part_2(input: usize) -> usize{
 
 fn main() {
     println!("Answer part 1: {}", solve_part_1(INPUT));
-    println!("Answer part 2: {}", solve_part_2(INPUT));
+    println!("Answer part 2: {}", solve_part_2(INPUT,INPUT_LENGTH));
 }

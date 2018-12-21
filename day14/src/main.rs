@@ -62,7 +62,7 @@ fn solve_part_2(input: usize, input_length: usize) -> usize{
     let mut board: Scoreboard = Scoreboard::new();
     let mut index: usize = 0;
     let mut test: usize = 0;
-    while (input / (board.scores.len() * 10)) > 0 {
+    while board.scores.len() < input_length {
         board.step();
     }
     while test != input {

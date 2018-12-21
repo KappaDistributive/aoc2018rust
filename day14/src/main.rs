@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 
 const INPUT: usize = 939601;
 
@@ -54,6 +55,27 @@ fn solve_part_1(input: usize) -> usize {
     result
 }
 
+fn solve_part_2(input: usize) -> usize{    
+    let mut board: Scoreboard = Scoreboard::new();
+    let mut index: usize = 0;
+    let mut test: usize = 0;
+    while (input / (board.scores.len() * 10)) > 0 {
+        board.step();
+    }
+    while test != input {
+        board.step();        
+        test = 0;
+        // replace 6 with number of digits of input
+        for i in 0..6 {
+            test *= 10;
+            test += board.scores[index+i] as usize;
+        }
+        index += 1;
+    }
+    index - 1
+}
+
 fn main() {
     println!("Answer part 1: {}", solve_part_1(INPUT));
+    println!("Answer part 2: {}", solve_part_2(INPUT));
 }
